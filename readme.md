@@ -1,12 +1,13 @@
-# AI Assistant with Web Search and Wikipedia Integration
+# MultiAgent Chat Assistant: Web Search, Wiki & SEO Analysis
 
 This project implements an intelligent conversational agent that can perform web searches and access Wikipedia information using LangGraph, LangChain, and OpenAI's GPT-4.
 
 ## Features
 
-- Natural conversation with GPT-4o
+- Natural conversation with GPT-4
 - Web search capabilities using browser automation
 - Wikipedia information lookup
+- SEO analysis for websites
 - Intelligent routing based on user input
 
 ## Prerequisites
@@ -34,6 +35,8 @@ This will start the AI assistant, allowing you to engage in natural conversation
 - Start with question words (what, who, where, when, why, how) to search Wikipedia
 - Start with "search" to perform web searches
   - Example: "search latest AI developments"
+- Start with "seo" followed by a website to analyze SEO metrics
+  - Example: "seo example.com"
 - Type "exit" to end the conversation
 
 ## How it Works
@@ -43,7 +46,8 @@ The application uses a state machine implemented with LangGraph to route user in
 1. **Router**: Determines which node should handle the user input
 2. **Wikipedia Search**: Handles queries that need Wikipedia information
 3. **Browser Search**: Processes web search requests
-4. **Conversation**: Manages general chat interactions
+4. **SEO Analysis**: Analyzes websites for basic SEO metrics
+5. **Conversation**: Manages general chat interactions
 
 ## Architecture
 
@@ -55,10 +59,11 @@ The application is built using LangGraph, LangChain, and OpenAI's GPT-4. It leve
 
 The flow now works as follows:
 - Every interaction starts at the router
-- Router decides between three paths:
+- Router decides between four paths:
   - Direct to conversation (for regular chat)
   - Wiki search → conversation (for questions starting with what, who, where, etc.)
   - Browser search → conversation (for messages starting with "search")
+  - SEO analysis → conversation (for messages starting with "seo")
 - All paths ultimately end at the conversation node
 
 ## Configuration

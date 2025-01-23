@@ -8,6 +8,10 @@ import wikipediaapi
 from config import OPENAI_API_KEY
 from browser_use import Agent
 import asyncio
+from urllib.parse import urlparse
+import requests
+from bs4 import BeautifulSoup
+import re
 
 # Set API key from config
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
@@ -122,12 +126,61 @@ async def browser_search_node(state: dict):
             "wiki_content": f"Error during search: {str(e)}"
         }
 
+# Define the SEO analysis node
+async def seo_analysis_node(state: dict):
+    messages = state["messages"]
+    last_message = messages[-1].content.lower()
+    
+    # Extract website URL from command
+    website = last_message.replace("seo", "", 1).strip()
+    if not website.startswith(('http://', 'https://')):
+        website = 'https://' + website
+    
+    try:
+        # Fetch website content
+        response = requests.get(website, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        print(f"Soup content: {soup}")
+        
+        # Basic SEO analysis
+        seo_report = {
+            "title": soup.title.string if soup.title else "No title found",
+            "meta_description": soup.find("meta", {"name": "description"})["content"] if soup.find("meta", {"name": "description"}) else "No meta description found",
+            "h1_count": len(soup.find_all('h1')),
+            "h2_count": len(soup.find_all('h2')),
+            "img_alt_missing": len([img for img in soup.find_all('img') if not img.get('alt')]),
+            "word_count": len(re.findall(r'\w+', soup.get_text())),
+        }
+        
+        analysis = f"""SEO Analysis for {website}:
+- Title ({len(seo_report['title']) if seo_report['title'] != 'No title found' else 0} chars): {seo_report['title']}
+- Meta Description ({len(seo_report['meta_description']) if seo_report['meta_description'] != 'No meta description found' else 0} chars): {seo_report['meta_description']}
+- H1 Tags: {seo_report['h1_count']} found
+- H2 Tags: {seo_report['h2_count']} found
+- Images missing alt text: {seo_report['img_alt_missing']}
+- Approximate word count: {seo_report['word_count']}"""
+        
+        return {
+            "messages": messages,
+            "next_step": "conversation",
+            "wiki_content": analysis
+        }
+    except Exception as e:
+        return {
+            "messages": messages,
+            "next_step": "conversation",
+            "wiki_content": f"Error analyzing website: {str(e)}"
+        }
+
 # Update the router function
 def router(state: dict) -> dict:
     last_message = state["messages"][-1].content.lower()
     
     if last_message.startswith("search"):
         next_step = "browser_search"
+    elif last_message.startswith("seo"):
+        next_step = "seo_analysis"
     else:
         # Existing logic for question words
         question_words = ["what", "who", "where", "when", "why", "how"]
@@ -146,6 +199,7 @@ workflow.add_node("router", router)
 workflow.add_node("wiki_search", wiki_search_node)
 workflow.add_node("conversation", conversation_node)
 workflow.add_node("browser_search", browser_search_node)
+workflow.add_node("seo_analysis", seo_analysis_node)
 
 # Add edges
 workflow.set_entry_point("router")
@@ -155,11 +209,13 @@ workflow.add_conditional_edges(
     {
         "wiki_search": "wiki_search",
         "browser_search": "browser_search",
+        "seo_analysis": "seo_analysis",
         "conversation": "conversation"
     }
 )
 workflow.add_edge("wiki_search", "conversation")
 workflow.add_edge("browser_search", "conversation")
+workflow.add_edge("seo_analysis", "conversation")
 
 # Set finish point
 workflow.set_finish_point("conversation")
