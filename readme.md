@@ -18,12 +18,12 @@ This project implements an intelligent conversational agent that can perform web
 ## Installation
 
 1. Install required packages:
-`pip install langgraph langchain langchain-openai wikipedia-api browser-use python-dotenv playwright`
+`pip install -r requirements.txt`
 
 2. Install Playwright browsers:
 `playwright install`
 
-3. Set your OpenAI API key in the `config.py` file.
+3. Change filename `config.example.py` to `config.py`, and set your OpenAI API key in the `config.py` file.
 
 4. Run the script:
 `python agents.py`
